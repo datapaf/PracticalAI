@@ -72,12 +72,15 @@ class Agent:
         self.policy = Policy(discount_factor)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
+    def select_action(self, state):
+        return self.policy(torch.FloatTensor(state))
+
     def train(self, n_episodes, n_steps=1000):
         running_reward = 0
         for episode in range(n_episodes):
             state, _ = self.env.reset()
             for step in range(n_steps):
-                action = self.policy(torch.FloatTensor(state))
+                action = self.select_action(state)
                 state, reward, terminated, truncated, info = self.env.step(action)
                 self.policy.rewards.append(reward)
 
@@ -98,4 +101,24 @@ class Agent:
             )
             running_reward = 0
 
-Agent().train(10)
+import keyboard
+
+agent = Agent()
+agent.train(750)
+
+env = gym.make("LunarLander-v2", render_mode="human")
+observation, info = env.reset()
+
+while True:
+
+   if keyboard.is_pressed('esc'):
+      break
+
+   action = agent.select_action(observation)
+   observation, reward, terminated, truncated, info = env.step(action)
+
+   if terminated or truncated:
+      observation, info = env.reset()
+
+env.close()
+
